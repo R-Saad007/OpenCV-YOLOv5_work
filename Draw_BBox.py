@@ -25,7 +25,7 @@ for x in range(0, len(train_images)):
         end = (endx, endy)
         # Drawing BBox
         cv.rectangle(img, start, end,(0,0,255),3) 
-        # to save the image somewhere
-        img_path = os.path.join(img_save_path, train_images[x]) 
+    # to save the image somewhere
+    img_path = os.path.join(img_save_path, train_images[x]) 
     cv.imwrite(img_path, img)
 print("Process Completed!")
