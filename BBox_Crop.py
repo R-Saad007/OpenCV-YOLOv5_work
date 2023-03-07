@@ -32,7 +32,7 @@ for x in range(0, len(train_images)):
         # Cropping an image
         cropped_image = img[starty:endy, startx:endx]
         # To save the cropped image
-        cropped_img_path = os.path.join(cropped_img_save_path, str(counter) + '.jpg')
+        cropped_img_path = os.path.join(cropped_img_save_path, f"{str(counter)}.jpg")
         cv.imwrite(cropped_img_path, cropped_image)
     # To save the image somewhere
     img_path = os.path.join(img_save_path, train_images[x])
