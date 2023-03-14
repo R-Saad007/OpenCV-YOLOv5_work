@@ -10,4 +10,4 @@ It is the process of detecting elements/objects within the same image based on t
 An object detection technique which involves the use of the object's pixels in order to create detection regions instead of using BBox.
 
 ## **Image Augmentation:**
-A technique used to increase a user's dataset. It might be due to a small dataset, or can act as one of the important measures to reduce overfitting problems. This is done by recreating images from previously available ones in the dataset by rotating, shearing, or transforming them.
+A technique used to increase a user's dataset. It might be due to a small dataset, or can act as one of the important measures to reduce overfitting problems. This is done by recreating images from previously available ones in the dataset by rotating, shearing, or transforming them. This technique generally increases the accuracy of the model and helps to reduce data labelling and cleaning costs.
