@@ -1,6 +1,7 @@
 import torch
 import cv2
 import argparse
+import numpy as np
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # yolov5 handler for object dection in videos
@@ -27,7 +28,6 @@ class handler():
         ret, frame = cap.read()
         # video processing loop
         while ret:
-            frame = cv2.resize(frame, (404, 720), fx = 0, fy = 0, interpolation = cv2.INTER_CUBIC)
             # appending each frame to the frame list
             self.frame_list.append(frame)
             # checking for user's exit command
@@ -50,10 +50,16 @@ class handler():
         print("Starting Frame Inferencing...")
         for x in range(len(self.frame_list)):
             results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
-            # saving results
-            results.save()
+            results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
     
+    def view_output(self):
+        # display inferenced output
+        for frame in self.frame_list:
+            cv2.imshow("Frame" , frame)
+            if cv2.waitKey(25) and 0xFF == ord("q"):
+                break
+
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
@@ -78,6 +84,7 @@ if __name__ == '__main__':
     vid_handler.load_model()
     vid_handler.frame_conversion()
     vid_handler.inference()
+    vid_handler.view_output()
     del vid_handler
     end.record()
 
