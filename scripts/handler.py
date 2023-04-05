@@ -27,7 +27,7 @@ class handler():
         ret, frame = cap.read()
         # video processing loop
         while ret:
-            frame = cv2.resize(frame, (540, 380), fx = 0, fy = 0, interpolation = cv2.INTER_CUBIC)
+            frame = cv2.resize(frame, (404, 720), fx = 0, fy = 0, interpolation = cv2.INTER_CUBIC)
             # appending each frame to the frame list
             self.frame_list.append(frame)
             # checking for user's exit command
@@ -48,11 +48,12 @@ class handler():
     def inference(self):
         # inference on all video frames
         print("Starting Frame Inferencing...")
-        results = self.model(self.frame_list)
+        for x in range(len(self.frame_list)):
+            results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
+            # saving results
+            results.save()
         print("Inferencing Completed!")
-        # saving results
-        results.save()
-
+    
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
