@@ -51,7 +51,7 @@ class handler():
         results = self.model(self.frame_list)
         print("Inferencing Completed!")
         # saving results
-        results.save(args.output_path)
+        results.save()
 
     def __del__(self):
         # object destructor
@@ -65,7 +65,6 @@ if __name__ == '__main__':
     # Argument from CLI
     parser = argparse.ArgumentParser(description = 'I/O file paths required.')
     parser.add_argument('-img_path', type = str, dest = 'img_path', required =True)
-    parser.add_argument('-output_path', type = str, dest = 'output_path', required =True)
     args = parser.parse_args()
 
     # For calculating execution time
