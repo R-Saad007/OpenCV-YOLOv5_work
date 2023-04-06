@@ -1,6 +1,7 @@
 import torch
 import cv2
 import argparse
+import time
 import numpy as np
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -55,10 +56,20 @@ class handler():
     
     def view_output(self):
         # display inferenced output
+        # calculating time between frames to display fps information
+        prev_time = 0.0
+        new_frame_time = 0.0
+        font = cv2.FONT_HERSHEY_SIMPLEX
         for frame in self.frame_list:
+            new_frame_time = time.time()
+            fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+            cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             cv2.imshow("Frame" , frame)
+            prev_time = new_frame_time
             if cv2.waitKey(25) and 0xFF == ord("q"):
                 break
+        # Closes all the windows currently opened.
+        cv2.destroyAllWindows()
 
     def __del__(self):
         # object destructor
