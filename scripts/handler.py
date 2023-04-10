@@ -2,6 +2,8 @@ import torch
 import cv2
 import argparse
 import time
+import pandas
+import json
 import numpy as np
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -51,6 +53,7 @@ class handler():
         print("Starting Frame Inferencing...")
         for x in range(len(self.frame_list)):
             results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
+            self.write_output(results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
             results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
     
@@ -71,6 +74,11 @@ class handler():
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
 
+    def write_output(self, data):
+        # writing JSON format output to a file
+        with open("sample.json", "w") as outfile:
+            json.dump(data, outfile)
+        
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
