@@ -76,7 +76,7 @@ class handler():
 
     def write_output(self, data):
         # writing JSON format output to a file
-        with open("sample.json", "w") as outfile:
+        with open("sample.json", "a") as outfile:
             json.dump(data, outfile)
         
     def __del__(self):
