@@ -53,7 +53,7 @@ class handler():
         print("Starting Frame Inferencing...")
         for x in range(len(self.frame_list)):
             results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
-            self.write_output(results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
+            self.write_output(x+1, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
             results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
     
@@ -74,11 +74,18 @@ class handler():
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
 
-    def write_output(self, data):
+    def write_output(self, frameno, data):
         # writing JSON format output to a file
         with open("sample.json", "a") as outfile:
-            json.dump(data, outfile)
-        
+            # indenting the JSON data according to the YOLOv5 JSON output parameters
+            if data == "[]":
+                data = 'No DETECTION'
+            else:
+                data = json.dumps(data)
+            result = f'Frame: {frameno} \t Detections: ' + data + '\n'
+            outfile.write(result)
+        outfile.close()
+
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
