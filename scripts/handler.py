@@ -63,10 +63,16 @@ class handler():
         prev_time = 0.0
         new_frame_time = 0.0
         font = cv2.FONT_HERSHEY_SIMPLEX
+        # coordinates for the marked region (footfall counter)
+        start = (620,500)
+        end = (1000,650)
         for frame in self.frame_list:
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+            # FPS text
             cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # Footfall region
+            cv2.rectangle(frame, start, end,(0,0,255),3)
             cv2.imshow("Frame" , frame)
             prev_time = new_frame_time
             if cv2.waitKey(25) and 0xFF == ord("q"):
