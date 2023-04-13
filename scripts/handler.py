@@ -5,7 +5,17 @@ import time
 import pandas
 import json
 import numpy as np
+from yolox.tracker.byte_tracker import BYTETracker
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# ByteTrack args class
+class bytetrackerargs():
+    track_thresh: float = 0.25                  # tracking threshold
+    track_buffer: int = 30                      # frames in buffer
+    match_thresh: float = 0.8                   # matching threshold
+    aspect_ratio_thresh: float = 3.0
+    min_box_area: float = 1.0                   # smallest possible bbox
+    mot20: bool = False                         # not using mot20
 
 # yolov5 handler for object dection in videos
 # handler class
@@ -14,6 +24,7 @@ class handler():
         self.model = None                       # yolov5 model
         self.vid_path = vid                     # video path
         self.frame_list = list()                # list of frames/images in video
+        self.targets = list()                   # list of tracker outputs
 
     def load_model(self):
         # loading pytorch yolov5 model for inference
@@ -51,8 +62,12 @@ class handler():
     def inference(self):
         # inference on all video frames
         print("Starting Frame Inferencing...")
+        tracker = BYTETracker(bytetrackerargs) # byte tracker object
         for x in range(len(self.frame_list)):
             results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
+            detections = self.bytetrackconverter(results)
+            online_targets = tracker.update(detections, (1920,1080), (1920,1080)) # tracker output
+            self.targets.append(online_targets)
             self.write_output(x+1, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
             results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
@@ -66,7 +81,7 @@ class handler():
         # coordinates for the marked region (footfall counter)
         start = (620,500)
         end = (1000,650)
-        for frame in self.frame_list:
+        for frame in self.targets:
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
             # FPS text
@@ -92,11 +107,32 @@ class handler():
             outfile.write(result)
         outfile.close()
 
+    def bytetrackconverter(self, results):
+        # converts yolov5 output to bytetrack input
+        df = results.pandas().xyxy[0] # yolov5 output as a dataframe
+        # list of the processed input for tracking
+        detections = []
+        # xmin values
+        xmin_vals = df['xmin'].tolist()
+        # ymin values
+        ymin_vals = df['ymin'].tolist()
+        # xmax values
+        xmax_vals = df['xmax'].tolist()
+        # ymax values
+        ymax_vals = df['ymax'].tolist()
+        # confidence values
+        conf_values = df['confidence'].tolist()
+        # formatting values
+        for x in range(len(df)):
+            detections.append([xmin_vals[x],ymin_vals[x],xmax_vals[x],ymax_vals[x],conf_values[x]])
+        return np.array(detections, dtype=float)
+
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
         self.vid_path = None                                                # video path
         self.frame_list = self.frame_list.clear()                           # list of frames/images in video
+        self.targets = self.targets.clear()                                 # list of tracker outputs
         print("Handler destructor invoked!")
 
 # main function
