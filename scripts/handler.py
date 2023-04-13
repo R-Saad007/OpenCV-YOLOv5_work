@@ -66,7 +66,7 @@ class handler():
         for x in range(len(self.frame_list)):
             results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
             detections = self.bytetrackconverter(results)
-            online_targets = tracker.update(detections, (1920,1080), (1920,1080)) # tracker output
+            online_targets = tracker.update(detections, self.frame_list[x].shape[:2], self.frame_list[x].shape[:2]) # tracker output
             self.targets.append(online_targets)
             self.write_output(x+1, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
             results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
@@ -81,7 +81,7 @@ class handler():
         # coordinates for the marked region (footfall counter)
         start = (620,500)
         end = (1000,650)
-        for frame in self.targets:
+        for frame in self.frame_list:
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
             # FPS text
