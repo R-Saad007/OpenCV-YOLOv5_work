@@ -71,6 +71,7 @@ class handler():
             self.write_output(x+1, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
             results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
+        print("JSON file created!")
     
     def view_output(self):
         # display inferenced output
@@ -106,7 +107,6 @@ class handler():
             result = f'Frame: {frameno} \t Detections: ' + data + '\n'
             outfile.write(result)
         outfile.close()
-        print("JSON file created!")
 
     def bytetrackconverter(self, results):
         # converts yolov5 output to bytetrack input
