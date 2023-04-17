@@ -106,6 +106,7 @@ class handler():
             result = f'Frame: {frameno} \t Detections: ' + data + '\n'
             outfile.write(result)
         outfile.close()
+        print("JSON file created!")
 
     def bytetrackconverter(self, results):
         # converts yolov5 output to bytetrack input
