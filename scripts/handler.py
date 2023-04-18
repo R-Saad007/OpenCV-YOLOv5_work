@@ -73,7 +73,7 @@ class handler():
         print("Inferencing Completed!")
         print("JSON file created!")
     
-    def view_output(self):
+    def view_output_YOLOv5(self):
         # display inferenced output
         # calculating time between frames to display fps information
         prev_time = 0.0
@@ -88,8 +88,42 @@ class handler():
             # FPS text
             cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             # Footfall region
-            cv2.rectangle(frame, start, end,(0,0,255),3)
+            cv2.rectangle(frame, start, end,(0,255,0),-1)
             cv2.imshow("Frame" , frame)
+            prev_time = new_frame_time
+            if cv2.waitKey(25) and 0xFF == ord("q"):
+                break
+        # Closes all the windows currently opened.
+        cv2.destroyAllWindows()
+
+    def view_output_ByteTrack(self):
+        # display inferenced output
+        # calculating time between frames to display fps information
+        prev_time = 0.0
+        new_frame_time = 0.0
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        # coordinates for the marked region (footfall counter)
+        start = (620,500)
+        end = (1000,650)
+        for x in range(len(self.frame_list)):
+            new_frame_time = time.time()
+            fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+            # FPS text
+            cv2.putText(self.frame_list[x], fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # Footfall region
+            cv2.rectangle(self.frame_list[x], start, end,(0,255,0),-1)
+            # Drawing all ByteTrack bbox
+            for tracklet in self.targets[x]:
+                # the top left bbox coordinates
+                xmin_coord = int(tracklet._tlwh[0])
+                ymin_coord = int(tracklet._tlwh[1])
+                bbox_coord_start = (xmin_coord, ymin_coord)
+                # the bottom right bbox coordinates
+                xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
+                ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
+                bbox_coord_end = (xmax_coord, ymax_coord)
+                cv2.rectangle(self.frame_list[x], bbox_coord_start, bbox_coord_end,(0,0,255),2)
+            cv2.imshow("Frame",self.frame_list[x])
             prev_time = new_frame_time
             if cv2.waitKey(25) and 0xFF == ord("q"):
                 break
@@ -153,7 +187,8 @@ if __name__ == '__main__':
     vid_handler.load_model()
     vid_handler.frame_conversion()
     vid_handler.inference()
-    vid_handler.view_output()
+    vid_handler.view_output_YOLOv5()
+    vid_handler.view_output_ByteTrack()
     del vid_handler
     end.record()
 
