@@ -64,7 +64,7 @@ class handler():
         print("Starting Frame Inferencing...")
         tracker = BYTETracker(bytetrackerargs) # byte tracker object
         for x in range(len(self.frame_list)):
-            results = self.model(self.frame_list[x]) # changed code to allow for CUDA memory usage / multiple runs problem
+            results = self.model(self.frame_list[x], size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
             detections = self.bytetrackconverter(results)
             online_targets = tracker.update(detections, self.frame_list[x].shape[:2], self.frame_list[x].shape[:2]) # tracker output
             self.targets.append(online_targets)
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     vid_handler.frame_conversion()
     vid_handler.inference()
     vid_handler.view_output_YOLOv5()
-    vid_handler.view_output_ByteTrack()
+    #vid_handler.view_output_ByteTrack()
     del vid_handler
     end.record()
 
