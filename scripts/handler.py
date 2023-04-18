@@ -24,6 +24,7 @@ class handler():
         self.model = None                       # yolov5 model
         self.vid_path = vid                     # video path
         self.frame_list = list()                # list of frames/images in video
+        self.frame_list_copy = list()           # copy of frame list for YOLOv5 model
         self.targets = list()                   # list of tracker outputs
 
     def load_model(self):
@@ -40,10 +41,14 @@ class handler():
         cap = cv2.VideoCapture(self.vid_path)
         # capturing first frame to check whether video exists for processing below
         ret, frame = cap.read()
+        counter = 1
         # video processing loop
         while ret:
             # appending each frame to the frame list
             self.frame_list.append(frame)
+            # inference on each video frame
+            self.inference(frame, counter)
+            counter += 1
             # checking for user's exit command
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
@@ -57,21 +62,19 @@ class handler():
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
         print("Video Processing Completed!")
-        print('Number of frames: ',len(self.frame_list))
-
-    def inference(self):
-        # inference on all video frames
-        print("Starting Frame Inferencing...")
-        tracker = BYTETracker(bytetrackerargs) # byte tracker object
-        for x in range(len(self.frame_list)):
-            results = self.model(self.frame_list[x], size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
-            detections = self.bytetrackconverter(results)
-            online_targets = tracker.update(detections, self.frame_list[x].shape[:2], self.frame_list[x].shape[:2]) # tracker output
-            self.targets.append(online_targets)
-            self.write_output(x+1, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
-            results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
         print("Inferencing Completed!")
-        print("JSON file created!")
+        print('Number of frames: ', len(self.frame_list))
+
+    def inference(self, frame, counter):
+        frame_copy = frame.copy()
+        self.frame_list_copy.append(frame_copy)
+        tracker = BYTETracker(bytetrackerargs) # byte tracker object
+        results = self.model(frame_copy, size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
+        detections = self.bytetrackconverter(results)
+        online_targets = tracker.update(detections, (640,640), (640,640)) # tracker output
+        self.targets.append(online_targets)
+        self.write_output(counter, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
+        results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
     
     def view_output_YOLOv5(self):
         # display inferenced output
@@ -82,7 +85,7 @@ class handler():
         # coordinates for the marked region (footfall counter)
         start = (620,500)
         end = (1000,650)
-        for frame in self.frame_list:
+        for frame in self.frame_list_copy:
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
             # FPS text
@@ -167,6 +170,7 @@ class handler():
         self.model = None                                                   # yolov5 model
         self.vid_path = None                                                # video path
         self.frame_list = self.frame_list.clear()                           # list of frames/images in video
+        self.frame_list_copy = self.frame_list_copy.clear()                 # copy of frame list for YOLOv5 model
         self.targets = self.targets.clear()                                 # list of tracker outputs
         print("Handler destructor invoked!")
 
@@ -186,9 +190,8 @@ if __name__ == '__main__':
     vid_handler = handler(args.img_path)
     vid_handler.load_model()
     vid_handler.frame_conversion()
-    vid_handler.inference()
     vid_handler.view_output_YOLOv5()
-    #vid_handler.view_output_ByteTrack()
+    vid_handler.view_output_ByteTrack()
     del vid_handler
     end.record()
 
