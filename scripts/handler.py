@@ -177,8 +177,8 @@ class handler():
 # main function
 if __name__ == '__main__':
     # Argument from CLI
-    parser = argparse.ArgumentParser(description = 'I/O file paths required.')
-    parser.add_argument('-img_path', type = str, dest = 'img_path', required =True)
+    parser = argparse.ArgumentParser(description = 'Input file path required.')
+    parser.add_argument('-vid_path', type = str, dest = 'vid_path', required =True)
     args = parser.parse_args()
 
     # For calculating execution time
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     start.record()
 
     # whatever you are timing goes here
-    vid_handler = handler(args.img_path)
+    vid_handler = handler(args.vid_path)
     vid_handler.load_model()
     vid_handler.frame_conversion()
     vid_handler.view_output_YOLOv5()
