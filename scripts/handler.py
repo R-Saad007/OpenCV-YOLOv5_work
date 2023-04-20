@@ -125,6 +125,8 @@ class handler():
                 xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
                 ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
                 bbox_coord_end = (xmax_coord, ymax_coord)
+                trackletID = "ID:" + str(tracklet.track_id)
+                cv2.putText(self.frame_list[x], trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
                 cv2.rectangle(self.frame_list[x], bbox_coord_start, bbox_coord_end,(0,0,255),2)
             cv2.imshow("Frame",self.frame_list[x])
             prev_time = new_frame_time
@@ -190,7 +192,7 @@ if __name__ == '__main__':
     vid_handler = handler(args.vid_path)
     vid_handler.load_model()
     vid_handler.frame_conversion()
-    vid_handler.view_output_YOLOv5()
+    #vid_handler.view_output_YOLOv5()
     vid_handler.view_output_ByteTrack()
     del vid_handler
     end.record()
