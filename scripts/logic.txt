@@ -4,4 +4,4 @@ Simple Logic:
 - Check for track ID of an object and increment whenever the object crosses the designated area(green area) *FROM ABOVE* (Ensure only movement towards the area from top to bottom is considered)
 
 Edge Case:
--Ignore objects re-entering area
+-Ignore objects re-entering area (Need to increment as the object is coming in frame of reference with a new ID)
