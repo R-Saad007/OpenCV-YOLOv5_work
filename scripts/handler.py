@@ -17,7 +17,7 @@ class bytetrackerargs():
     min_box_area: float = 1.0                   # smallest possible bbox
     mot20: bool = False                         # not using mot20
 
-# yolov5 handler for object dection in videos
+# yolov5 handler for object detection in videos
 # handler class
 class handler():
     def __init__(self, vid):
@@ -44,10 +44,12 @@ class handler():
         counter = 1
         # video processing loop
         while ret:
-            # appending each frame to the frame list
-            self.frame_list.append(frame)
+            print(counter)
             # inference on each video frame
             self.inference(frame, counter)
+            # calling the visualizers after a set number of frames
+            #vid_handler.view_output_YOLOv5()
+            self.view_output_ByteTrack(frame, counter-1)
             counter += 1
             # checking for user's exit command
             if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -63,18 +65,16 @@ class handler():
         cv2.destroyAllWindows()
         print("Video Processing Completed!")
         print("Inferencing Completed!")
-        print('Number of frames: ', len(self.frame_list))
+        print('Number of frames: ', counter)
 
     def inference(self, frame, counter):
-        frame_copy = frame.copy()
-        self.frame_list_copy.append(frame_copy)
         tracker = BYTETracker(bytetrackerargs) # byte tracker object
-        results = self.model(frame_copy, size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
+        results = self.model(frame, size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
         detections = self.bytetrackconverter(results)
         online_targets = tracker.update(detections, (640,640), (640,640)) # tracker output
         self.targets.append(online_targets)
         self.write_output(counter, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
-        results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
+        #results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
     
     def view_output_YOLOv5(self):
         # display inferenced output
@@ -94,12 +94,13 @@ class handler():
             cv2.rectangle(frame, start, end,(0,255,0),-1)
             cv2.imshow("Frame" , frame)
             prev_time = new_frame_time
+            self.frame_list_copy.pop(0)
             if cv2.waitKey(25) and 0xFF == ord("q"):
                 break
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
 
-    def view_output_ByteTrack(self):
+    def view_output_ByteTrack(self, frame, counter):
         # display inferenced output
         # calculating time between frames to display fps information
         prev_time = 0.0
@@ -108,30 +109,26 @@ class handler():
         # coordinates for the marked region (footfall counter)
         start = (620,500)
         end = (1000,650)
-        for x in range(len(self.frame_list)):
-            new_frame_time = time.time()
-            fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-            # FPS text
-            cv2.putText(self.frame_list[x], fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-            # Footfall region
-            cv2.rectangle(self.frame_list[x], start, end,(0,255,0),-1)
-            # Drawing all ByteTrack bbox
-            for tracklet in self.targets[x]:
-                # the top left bbox coordinates
-                xmin_coord = int(tracklet._tlwh[0])
-                ymin_coord = int(tracklet._tlwh[1])
-                bbox_coord_start = (xmin_coord, ymin_coord)
-                # the bottom right bbox coordinates
-                xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
-                ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
-                bbox_coord_end = (xmax_coord, ymax_coord)
-                trackletID = "ID:" + str(tracklet.track_id)
-                cv2.putText(self.frame_list[x], trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-                cv2.rectangle(self.frame_list[x], bbox_coord_start, bbox_coord_end,(0,0,255),2)
-            cv2.imshow("Frame",self.frame_list[x])
-            prev_time = new_frame_time
-            if cv2.waitKey(25) and 0xFF == ord("q"):
-                break
+        new_frame_time = time.time()
+        fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+        # FPS text
+        cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+        # Footfall region
+        cv2.rectangle(frame, start, end,(0,255,0),-1)
+        # Drawing all ByteTrack bbox
+        for tracklet in self.targets[counter]:
+            # the top left bbox coordinates
+            xmin_coord = int(tracklet._tlwh[0])
+            ymin_coord = int(tracklet._tlwh[1])
+            bbox_coord_start = (xmin_coord, ymin_coord)
+            # the bottom right bbox coordinates
+            xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
+            ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
+            bbox_coord_end = (xmax_coord, ymax_coord)
+            cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
+        cv2.imshow("Frame",frame)
+        cv2.waitKey(5)
+        prev_time = new_frame_time
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
 
@@ -179,7 +176,7 @@ class handler():
 # main function
 if __name__ == '__main__':
     # Argument from CLI
-    parser = argparse.ArgumentParser(description = 'Input file path required.')
+    parser = argparse.ArgumentParser(description = 'I/O file paths required.')
     parser.add_argument('-vid_path', type = str, dest = 'vid_path', required =True)
     args = parser.parse_args()
 
@@ -192,8 +189,6 @@ if __name__ == '__main__':
     vid_handler = handler(args.vid_path)
     vid_handler.load_model()
     vid_handler.frame_conversion()
-    #vid_handler.view_output_YOLOv5()
-    vid_handler.view_output_ByteTrack()
     del vid_handler
     end.record()
 
