@@ -23,8 +23,6 @@ class handler():
     def __init__(self, vid):
         self.model = None                       # yolov5 model
         self.vid_path = vid                     # video path
-        self.frame_list = list()                # list of frames/images in video
-        self.frame_list_copy = list()           # copy of frame list for YOLOv5 model
         self.targets = list()                   # list of tracker outputs
 
     def load_model(self):
@@ -48,7 +46,7 @@ class handler():
             # inference on each video frame
             self.inference(frame, counter)
             # calling the visualizers after a set number of frames
-            #vid_handler.view_output_YOLOv5()
+            #vid_handler.view_output_YOLOv5(frame)
             self.view_output_ByteTrack(frame, counter-1)
             counter += 1
             # checking for user's exit command
@@ -76,7 +74,7 @@ class handler():
         self.write_output(counter, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
         #results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
     
-    def view_output_YOLOv5(self):
+    def view_output_YOLOv5(self, frame):
         # display inferenced output
         # calculating time between frames to display fps information
         prev_time = 0.0
@@ -85,18 +83,14 @@ class handler():
         # coordinates for the marked region (footfall counter)
         start = (620,500)
         end = (1000,650)
-        for frame in self.frame_list_copy:
-            new_frame_time = time.time()
-            fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-            # FPS text
-            cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-            # Footfall region
-            cv2.rectangle(frame, start, end,(0,255,0),-1)
-            cv2.imshow("Frame" , frame)
-            prev_time = new_frame_time
-            self.frame_list_copy.pop(0)
-            if cv2.waitKey(25) and 0xFF == ord("q"):
-                break
+        new_frame_time = time.time()
+        fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+        # FPS text
+        cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+        # Footfall region
+        cv2.rectangle(frame, start, end,(0,255,0),-1)
+        cv2.imshow("Frame" , frame)
+        prev_time = new_frame_time
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
 
@@ -127,7 +121,7 @@ class handler():
             bbox_coord_end = (xmax_coord, ymax_coord)
             cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
         cv2.imshow("Frame",frame)
-        cv2.waitKey(5)
+        cv2.waitKey(100)
         prev_time = new_frame_time
         # Closes all the windows currently opened.
         cv2.destroyAllWindows()
@@ -168,8 +162,6 @@ class handler():
         # object destructor
         self.model = None                                                   # yolov5 model
         self.vid_path = None                                                # video path
-        self.frame_list = self.frame_list.clear()                           # list of frames/images in video
-        self.frame_list_copy = self.frame_list_copy.clear()                 # copy of frame list for YOLOv5 model
         self.targets = self.targets.clear()                                 # list of tracker outputs
         print("Handler destructor invoked!")
 
