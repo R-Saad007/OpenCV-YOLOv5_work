@@ -22,6 +22,7 @@ class bytetrackerargs():
 class handler():
     def __init__(self, vid):
         self.model = None                       # yolov5 model
+        self.trackIds = list()                  # list to store tracking ids of tracked objects
         self.vid_path = vid                     # video path
 
     def load_model(self):
@@ -46,6 +47,7 @@ class handler():
         # byte tracker object
         tracker = BYTETracker(bytetrackerargs)
         frame_count = 0
+        footfall_count = 0
         # video processing loop
         while cap.isOpened():
             # capturing first frame to check whether video exists for processing below
@@ -69,7 +71,7 @@ class handler():
             online_targets = tracker.update(detections, (640,640), (640,640))
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-            counter = 'Count:'
+            counter = 'Count:' + str(footfall_count)
             # FPS text
             cv2.putText(frame, fps, (7, 70), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
             # Counter
@@ -90,6 +92,12 @@ class handler():
                     cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
                     # drawing bbox
                     cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
+                    # counting logic
+                    if trackletID not in self.trackIds:
+                        if xmin_coord >= (start[0]-10) and xmax_coord <= (end[0]+10):
+                            if ymin_coord <= end[1] or ymax_coord >= end[1]:
+                                footfall_count += 1
+                                self.trackIds.append(trackletID)
             # visualizing output frame
             cv2.imshow("ByteTrack Output" , frame)
             prev_time = new_frame_time
@@ -137,6 +145,7 @@ class handler():
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
+        self.trackIds = self.trackIds.clear()                               # list to store tracking ids of tracked objects
         self.vid_path = None                                                # video path
         print("Handler destructor invoked!")
 
