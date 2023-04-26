@@ -63,7 +63,7 @@ class handler():
             2)  YOLOv5 Output
             '''
             # converting each frame to a JSON object for the JSON file
-            #self.write_output(frame_count, results.pandas().xyxy[0].to_json(orient='records'))
+            # self.write_output(frame_count, results.pandas().xyxy[0].to_json(orient='records'))
             # results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
             # tracker output
             online_targets = tracker.update(detections, (640,640), (640,640))
