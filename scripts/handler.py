@@ -69,8 +69,11 @@ class handler():
             online_targets = tracker.update(detections, (640,640), (640,640))
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+            counter = 'Count:'
             # FPS text
-            cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, fps, (7, 70), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+            # Counter
+            cv2.putText(frame, counter, (8, 140), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
             # Footfall region
             cv2.rectangle(frame, start, end,(0,255,0),-1)
             for tracklet in online_targets:
