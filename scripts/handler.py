@@ -23,38 +23,70 @@ class handler():
     def __init__(self, vid):
         self.model = None                       # yolov5 model
         self.vid_path = vid                     # video path
-        self.targets = list()                   # list of tracker outputs
 
     def load_model(self):
         # loading pytorch yolov5 model for inference
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
+        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         # shifting model to GPU
         self.model.to(device)
         # for running inference on the person class only
         self.model.classes = [0]
 
-    def frame_conversion(self):
+    def frame_processing(self):
         print("Starting Video Processing...")
+        # fps calculators
+        prev_time = 0.0
+        new_frame_time = 0.0
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        # coordinates for the marked region (footfall counter)
+        start = (620,500)
+        end = (1000,650)
         # video capture object
         cap = cv2.VideoCapture(self.vid_path)
+        # byte tracker object
+        tracker = BYTETracker(bytetrackerargs)
         # capturing first frame to check whether video exists for processing below
         ret, frame = cap.read()
-        counter = 1
+        frame_count = 1
         # video processing loop
         while ret:
-            print(counter)
-            # inference on each video frame
-            self.inference(frame, counter)
-            # calling the visualizers after a set number of frames
-            #vid_handler.view_output_YOLOv5(frame)
-            self.view_output_ByteTrack(frame, counter-1)
-            counter += 1
-            # checking for user's exit command
+            # inference + tracking
+            results = self.model(frame, size=640)
+            detections = self.bytetrackconverter(results)
+            # converting each frame to a JSON object for the JSON file
+            self.write_output(frame_count, results.pandas().xyxy[0].to_json(orient='records'))
+            # results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
+            # tracker output
+            online_targets = tracker.update(detections, (640,640), (640,640))
+            new_frame_time = time.time()
+            fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
+            # FPS text
+            cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # Footfall region
+            cv2.rectangle(frame, start, end,(0,255,0),-1)
+            for tracklet in online_targets:
+                    # the top left bbox coordinates
+                    xmin_coord = int(tracklet._tlwh[0])
+                    ymin_coord = int(tracklet._tlwh[1])
+                    bbox_coord_start = (xmin_coord, ymin_coord)
+                    # the bottom right bbox coordinates
+                    xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
+                    ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
+                    bbox_coord_end = (xmax_coord, ymax_coord)
+                    trackletID = "ID: " + str(tracklet.track_id)
+                    # adding tracking ID to object
+                    cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+                    # drawing bbox
+                    cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
+            # visualizing output frame
+            cv2.imshow("ByteTrack Output" , frame)
+            prev_time = new_frame_time
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
             # error handling for last frame
             try:
-                ret, frame = cap.read()                                
+                ret, frame = cap.read()
+                frame_count += 1                                
             except Exception:
                 pass
         # release the video capture object
@@ -63,71 +95,8 @@ class handler():
         cv2.destroyAllWindows()
         print("Video Processing Completed!")
         print("Inferencing Completed!")
-        print('Number of frames: ', counter)
-
-    def inference(self, frame, counter):
-        tracker = BYTETracker(bytetrackerargs) # byte tracker object
-        results = self.model(frame, size = 640) # changed code to allow for CUDA memory usage / multiple runs problem
-        detections = self.bytetrackconverter(results)
-        online_targets = tracker.update(detections, (640,640), (640,640)) # tracker output
-        self.targets.append(online_targets)
-        self.write_output(counter, results.pandas().xyxy[0].to_json(orient='records')) # converting each frame to a JSON object for the JSON file
-        #results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
+        print('Number of frames: ', frame_count)
     
-    def view_output_YOLOv5(self, frame):
-        # display inferenced output
-        # calculating time between frames to display fps information
-        prev_time = 0.0
-        new_frame_time = 0.0
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        # coordinates for the marked region (footfall counter)
-        start = (620,500)
-        end = (1000,650)
-        new_frame_time = time.time()
-        fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-        # FPS text
-        cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-        # Footfall region
-        cv2.rectangle(frame, start, end,(0,255,0),-1)
-        cv2.imshow("Frame" , frame)
-        prev_time = new_frame_time
-        # Closes all the windows currently opened.
-        cv2.destroyAllWindows()
-
-    def view_output_ByteTrack(self, frame, counter):
-        # display inferenced output
-        # calculating time between frames to display fps information
-        prev_time = 0.0
-        new_frame_time = 0.0
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        # coordinates for the marked region (footfall counter)
-        start = (620,500)
-        end = (1000,650)
-        new_frame_time = time.time()
-        fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-        # FPS text
-        cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-        # Footfall region
-        cv2.rectangle(frame, start, end,(0,255,0),-1)
-        # Drawing all ByteTrack bbox
-        for tracklet in self.targets[counter]:
-            # the top left bbox coordinates
-            xmin_coord = int(tracklet._tlwh[0])
-            ymin_coord = int(tracklet._tlwh[1])
-            bbox_coord_start = (xmin_coord, ymin_coord)
-            # the bottom right bbox coordinates
-            xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
-            ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
-            bbox_coord_end = (xmax_coord, ymax_coord)
-            trackletID = "ID: " + str(tracklet.track_id)
-            cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-            cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
-        cv2.imshow("Frame",frame)
-        cv2.waitKey(100)
-        prev_time = new_frame_time
-        # Closes all the windows currently opened.
-        cv2.destroyAllWindows()
-
     def write_output(self, frameno, data):
         # writing JSON format output to a file
         with open("sample.json", "a") as outfile:
@@ -164,7 +133,6 @@ class handler():
         # object destructor
         self.model = None                                                   # yolov5 model
         self.vid_path = None                                                # video path
-        self.targets = self.targets.clear()                                 # list of tracker outputs
         print("Handler destructor invoked!")
 
 # main function
@@ -182,7 +150,7 @@ if __name__ == '__main__':
     # whatever you are timing goes here
     vid_handler = handler(args.vid_path)
     vid_handler.load_model()
-    vid_handler.frame_conversion()
+    vid_handler.frame_processing()
     del vid_handler
     end.record()
 
