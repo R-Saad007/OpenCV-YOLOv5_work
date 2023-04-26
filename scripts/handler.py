@@ -45,14 +45,23 @@ class handler():
         cap = cv2.VideoCapture(self.vid_path)
         # byte tracker object
         tracker = BYTETracker(bytetrackerargs)
-        # capturing first frame to check whether video exists for processing below
-        ret, frame = cap.read()
-        frame_count = 1
+        frame_count = 0
         # video processing loop
-        while ret:
+        while cap.isOpened():
+            # capturing first frame to check whether video exists for processing below
+            ret, frame = cap.read()
+            # if no frame exists, simply end the capturing process
+            if not ret:
+                break
+            frame_count +=1
             # inference + tracking
             results = self.model(frame, size=640)
             detections = self.bytetrackconverter(results)
+            '''
+            Uncomment the lines below for:
+            1)  JSON file output
+            2)  YOLOv5 Output
+            '''
             # converting each frame to a JSON object for the JSON file
             #self.write_output(frame_count, results.pandas().xyxy[0].to_json(orient='records'))
             # results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
@@ -66,12 +75,12 @@ class handler():
             cv2.rectangle(frame, start, end,(0,255,0),-1)
             for tracklet in online_targets:
                     # the top left bbox coordinates
-                    xmin_coord = int(tracklet._tlwh[0])
-                    ymin_coord = int(tracklet._tlwh[1])
+                    xmin_coord = int(tracklet.tlwh[0])
+                    ymin_coord = int(tracklet.tlwh[1])
                     bbox_coord_start = (xmin_coord, ymin_coord)
                     # the bottom right bbox coordinates
-                    xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
-                    ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
+                    xmax_coord = int(bbox_coord_start[0] + tracklet.tlwh[2])
+                    ymax_coord = int(bbox_coord_start[1] + tracklet.tlwh[3])
                     bbox_coord_end = (xmax_coord, ymax_coord)
                     trackletID = "ID:" + str(tracklet.track_id)
                     # adding tracking ID to object
@@ -81,14 +90,7 @@ class handler():
             # visualizing output frame
             cv2.imshow("ByteTrack Output" , frame)
             prev_time = new_frame_time
-            if cv2.waitKey(25) & 0xFF == ord('q'):
-                break
-            # error handling for last frame
-            try:
-                ret, frame = cap.read()
-                frame_count += 1                                
-            except Exception:
-                pass
+            cv2.waitKey(1)
         # release the video capture object
         cap.release()
         # Closes all the windows currently opened.
