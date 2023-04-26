@@ -119,6 +119,8 @@ class handler():
             xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
             ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
             bbox_coord_end = (xmax_coord, ymax_coord)
+            trackletID = "ID: " + str(tracklet.track_id)
+            cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
         cv2.imshow("Frame",frame)
         cv2.waitKey(100)
