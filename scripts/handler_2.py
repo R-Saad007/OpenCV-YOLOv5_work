@@ -11,7 +11,6 @@ def script():
         track_thresh: float = 0.25                  # tracking threshold
         track_buffer: int = 30                      # frames in buffer
         match_thresh: float = 0.8                   # matching threshold
-        aspect_ratio_thresh: float = 3.0
         min_box_area: float = 1.0                   # smallest possible bbox
         mot20: bool = False                         # not using mot20
 
@@ -30,10 +29,12 @@ def script():
     # video capture object
     cap = cv2.VideoCapture('./adlytic_videos/footfall.mp4')
     tracker = BYTETracker(bytetrackerargs) # byte tracker object
-    # capturing first frame to check whether video exists for processing below
-    ret, frame = cap.read()
     # video processing loop
-    while ret:
+    while cap.isOpened():
+        # capturing first frame to check whether video exists for processing below
+        ret, frame = cap.read()
+        if not ret:
+             return -1
         # inference + tracking
         results = model(frame, size=640)
         detections = bytetrackconverter(results)
@@ -46,26 +47,20 @@ def script():
         # Footfall region
         cv2.rectangle(frame, start, end,(0,255,0),-1)
         for tracklet in online_targets:
-                # the top left bbox coordinates
-                xmin_coord = int(tracklet._tlwh[0])
-                ymin_coord = int(tracklet._tlwh[1])
-                bbox_coord_start = (xmin_coord, ymin_coord)
-                # the bottom right bbox coordinates
-                xmax_coord = int(bbox_coord_start[0] + tracklet._tlwh[2])
-                ymax_coord = int(bbox_coord_start[1] + tracklet._tlwh[3])
-                bbox_coord_end = (xmax_coord, ymax_coord)
-                trackletID = "ID: " + str(tracklet.track_id)
-                cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-                cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
+            # the top left bbox coordinates
+            xmin_coord = int(tracklet.tlwh[0])
+            ymin_coord = int(tracklet.tlwh[1])
+            bbox_coord_start = (xmin_coord, ymin_coord)
+            # the bottom right bbox coordinates
+            xmax_coord = int(bbox_coord_start[0] + tracklet.tlwh[2])
+            ymax_coord = int(bbox_coord_start[1] + tracklet.tlwh[3])
+            bbox_coord_end = (xmax_coord, ymax_coord)
+            trackletID = "ID: " + str(tracklet.track_id)
+            cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
         cv2.imshow("ByteTrack Output" , frame)
+        cv2.waitKey(1)
         prev_time = new_frame_time
-        if cv2.waitKey(25) & 0xFF == ord('q'):
-            break
-        # error handling for last frame
-        try:
-            ret, frame = cap.read()                                
-        except Exception:
-            pass
     # release the video capture object
     cap.release()
     # Closes all the windows currently opened.
@@ -92,6 +87,7 @@ def bytetrackconverter(results):
         for x in range(len(df)):
             detections.append([xmin_vals[x],ymin_vals[x],xmax_vals[x],ymax_vals[x],conf_values[x]])
         return np.array(detections, dtype=float)
+
 
 
 # Main
