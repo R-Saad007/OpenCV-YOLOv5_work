@@ -39,15 +39,18 @@ class handler():
         prev_time = 0.0
         new_frame_time = 0.0
         font = cv2.FONT_HERSHEY_SIMPLEX
-        # coordinates for the marked region (footfall counter)
-        start = (620,500)
-        end = (1000,650)
+        # coordinates for the exit region
+        start_exit = (620,250)
+        end_exit = (1000,400)
+        # coordinates for the entrance region
+        start_entrance = (620,650)
+        end_entrance = (1000,800)
         # video capture object
         cap = cv2.VideoCapture(self.vid_path)
         # byte tracker object
         tracker = BYTETracker(bytetrackerargs)
         frame_count = 0
-        footfall_count = 0
+        footfall = 0
         # video processing loop
         while cap.isOpened():
             # capturing first frame to check whether video exists for processing below
@@ -66,18 +69,21 @@ class handler():
             '''
             # converting each frame to a JSON object for the JSON file
             # self.write_output(frame_count, results.pandas().xyxy[0].to_json(orient='records'))
-            # results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class)
-            # tracker output
+            # results = np.array(results.render()) # selecting the frame from the inferenced output (YOLOv5 Detection class Output)
             online_targets = tracker.update(detections, (640,640), (640,640))
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-            counter = 'Count:' + str(footfall_count)
+            footfall_counter = 'Footfall:' + str(footfall)
             # FPS text
-            cv2.putText(frame, fps, (7, 70), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-            # Counter
-            cv2.putText(frame, counter, (8, 140), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-            # Footfall region
-            cv2.rectangle(frame, start, end,(0,255,0),-1)
+            cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # Counters
+            cv2.putText(frame, footfall_counter, (8, 120), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # Exit region
+            cv2.rectangle(frame, start_exit, end_exit,(0,0,255),-1)
+            cv2.putText(frame, "Exit", (780, 325), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            # Entrance region
+            cv2.rectangle(frame, start_entrance, end_entrance,(0,255,0),-1)
+            cv2.putText(frame, "Entrance", (750, 725), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
             for tracklet in online_targets:
                     # the top left bbox coordinates
                     xmin_coord = int(tracklet.tlwh[0])
@@ -94,9 +100,10 @@ class handler():
                     cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
                     # counting logic
                     if trackletID not in self.trackIds:
-                        if xmin_coord >= (start[0]-10) and xmax_coord <= (end[0]+10):
-                            if ymin_coord <= end[1] or ymax_coord >= end[1]:
-                                footfall_count += 1
+                        # bounding the vertical coloumn for the designated region
+                        if xmin_coord > (start_entrance[0]-5) and xmax_coord < (end_entrance[0]+5):
+                            if ymin_coord > start_exit[1] and ymax_coord < end_entrance[1]:
+                                footfall += 1
                                 self.trackIds.append(trackletID)
             # visualizing output frame
             cv2.imshow("ByteTrack Output" , frame)
