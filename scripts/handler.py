@@ -80,10 +80,10 @@ class handler():
             cv2.putText(frame, footfall_counter, (8, 120), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             # Exit region
             cv2.rectangle(frame, start_exit, end_exit,(0,0,255),-1)
-            cv2.putText(frame, "Exit", (780, 325), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Exit", (770, 325), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
             # Entrance region
             cv2.rectangle(frame, start_entrance, end_entrance,(0,255,0),-1)
-            cv2.putText(frame, "Entrance", (750, 725), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Entrance", (740, 725), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
             for tracklet in online_targets:
                     # the top left bbox coordinates
                     xmin_coord = int(tracklet.tlwh[0])
@@ -97,12 +97,12 @@ class handler():
                     # adding tracking ID to object
                     cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
                     # drawing bbox
-                    cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(0,0,255),2)
+                    cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(255,0,0),2)
                     # counting logic
                     if trackletID not in self.trackIds:
                         # bounding the vertical coloumn for the designated region
                         if xmin_coord > (start_entrance[0]-5) and xmax_coord < (end_entrance[0]+5):
-                            if ymin_coord > start_exit[1] and ymax_coord < end_entrance[1]:
+                            if ymin_coord < end_exit[1] and ymax_coord > start_entrance[1]:
                                 footfall += 1
                                 self.trackIds.append(trackletID)
             # visualizing output frame
