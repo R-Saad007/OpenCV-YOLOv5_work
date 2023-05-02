@@ -1,7 +1,7 @@
 # Scripts:
 Includes scripts for different purposes.
 
-# Logic:
+# Logic (handler.py):
 We need to implement logic to count footfall for a given video clip.
 
 ## Simple Logic:
