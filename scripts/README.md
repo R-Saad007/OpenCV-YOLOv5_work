@@ -5,7 +5,7 @@ Includes scripts for different purposes.
 We need to implement logic to count footfall for a given video clip.
 
 ## Simple Logic:
-- Check for track ID of an object and increment whenever the object crosses the designated area **green area** FROM ABOVE (Ensure only movement towards the area from top to bottom is considered)
+- Check for track ID of an object and increment whenever the object crosses the designated area (green area) **FROM ABOVE** (Ensure only movement towards the area from top to bottom is considered)
 - Making use of 2 dictionaries to store the state of the tracked object (inside,outside)
 
 ## Cases Handled:
