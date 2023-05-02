@@ -1,4 +1,5 @@
-#Scripts
+# Scripts:
+Includes scripts for different purposes.
 
 # Logic:
 We need to implement logic to count footfall for a given video clip.
