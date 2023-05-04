@@ -98,6 +98,15 @@ class handler():
             # Counters
             cv2.putText(frame, entrance_counter, (8, 120), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             cv2.putText(frame, exit_counter, (8, 170), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            '''
+            Regions for multiple videos
+            '''
+            # Exit region
+            # cv2.rectangle(frame, start_exit, end_exit,(0,0,255),-1)
+            # cv2.putText(frame, "Exit", (860, 460), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            # Entrance region
+            # cv2.rectangle(frame, start_entrance, end_entrance,(0,255,0),-1)
+            # cv2.putText(frame, "Entrance", (820, 570), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
             # Exit region
             cv2.rectangle(frame, start_exit, end_exit,(0,0,255),-1)
             cv2.putText(frame, "Exit", (770, 475), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
