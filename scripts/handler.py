@@ -8,6 +8,12 @@ import numpy as np
 from yolox.tracker.byte_tracker import BYTETracker
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# For RTSP
+USERNAME = 'USERNAME'
+PASSWORD = 'PASSWORD'
+ENDPOINT = 'ENDPOINT'
+IP = 'IPADDRESS'
+
 # ByteTrack args class
 class bytetrackerargs():
     track_thresh: float = 0.25                  # tracking threshold
@@ -22,7 +28,7 @@ class bytetrackerargs():
 class handler():
     def __init__(self, vid):
         self.model = None                       # yolov5 model
-        self.trackIds = list()                  # list to store tracking ids of tracked objects
+        self.inside_ids = set()                 # set to store tracking ids of entered tracked objects
         self.vid_path = vid                     # video path
 
     def load_model(self):
@@ -40,17 +46,19 @@ class handler():
         new_frame_time = 0.0
         font = cv2.FONT_HERSHEY_SIMPLEX
         # coordinates for the exit region
-        start_exit = (620,250)
-        end_exit = (1000,400)
+        start_exit = (620,400)
+        end_exit = (1000,550)
         # coordinates for the entrance region
         start_entrance = (620,650)
         end_entrance = (1000,800)
         # video capture object
+        # rtsp_cap = cv2.VideoCapture(f'rtsp://{username}:{password}@{ip}/{endpoint}')
         cap = cv2.VideoCapture(self.vid_path)
         # byte tracker object
         tracker = BYTETracker(bytetrackerargs)
         frame_count = 0
-        footfall = 0
+        entrances = 0
+        exits = 0
         # video processing loop
         while cap.isOpened():
             # capturing first frame to check whether video exists for processing below
@@ -73,14 +81,16 @@ class handler():
             online_targets = tracker.update(detections, (640,640), (640,640))
             new_frame_time = time.time()
             fps = 'FPS: ' + str(int(1/(new_frame_time-prev_time)))
-            footfall_counter = 'Footfall:' + str(footfall)
+            entrance_counter = 'Entrances:' + str(entrances)
+            exit_counter = 'Exits:' + str(exits)
             # FPS text
             cv2.putText(frame, fps, (7, 70), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             # Counters
-            cv2.putText(frame, footfall_counter, (8, 120), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, entrance_counter, (8, 120), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, exit_counter, (8, 170), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
             # Exit region
             cv2.rectangle(frame, start_exit, end_exit,(0,0,255),-1)
-            cv2.putText(frame, "Exit", (770, 325), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Exit", (770, 475), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
             # Entrance region
             cv2.rectangle(frame, start_entrance, end_entrance,(0,255,0),-1)
             cv2.putText(frame, "Entrance", (740, 725), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
@@ -94,19 +104,32 @@ class handler():
                     ymax_coord = int(bbox_coord_start[1] + tracklet.tlwh[3])
                     bbox_coord_end = (xmax_coord, ymax_coord)
                     trackletID = "ID:" + str(tracklet.track_id)
+                    # adding the track id to the respective set
+                    if ymax_coord > end_entrance[1]:
+                        self.inside_ids.add(tracklet.track_id)
                     # adding tracking ID to object
                     cv2.putText(frame, trackletID, (xmin_coord, ymin_coord - 2), font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
                     # drawing bbox
                     cv2.rectangle(frame, bbox_coord_start, bbox_coord_end,(255,0,0),2)
+                    # calculating the bottom mid x coordinate
+                    botxcoord = (xmin_coord+xmax_coord)/2.0
                     # counting logic
-                    if trackletID not in self.trackIds:
+                    if tracklet.track_id not in self.inside_ids:
                         # bounding the vertical coloumn for the designated region
-                        if xmin_coord > (start_entrance[0]-5) and xmax_coord < (end_entrance[0]+5):
-                            if ymin_coord < end_exit[1] and ymax_coord > start_entrance[1]:
-                                footfall += 1
-                                self.trackIds.append(trackletID)
+                        if botxcoord > start_entrance[0] and botxcoord < end_entrance[0]:
+                            if ymax_coord < end_entrance[1] and ymax_coord > start_entrance[1]:
+                                entrances += 1
+                                self.inside_ids.add(tracklet.track_id)  
+                    if tracklet.track_id in self.inside_ids:
+                        # bounding the vertical coloumn for the designated region
+                        if botxcoord > start_entrance[0] and botxcoord < end_entrance[0]:
+                            if ymax_coord < end_exit[1] and ymax_coord > start_exit[1]:
+                                exits += 1
+                                self.inside_ids.remove(tracklet.track_id)
             # visualizing output frame
             cv2.imshow("ByteTrack Output" , frame)
+            '''Remove the statement below(only for testing purposes)'''
+            # cv2.imwrite('frame.jpg',frame)
             prev_time = new_frame_time
             cv2.waitKey(1)
         # release the video capture object
@@ -152,7 +175,7 @@ class handler():
     def __del__(self):
         # object destructor
         self.model = None                                                   # yolov5 model
-        self.trackIds = self.trackIds.clear()                               # list to store tracking ids of tracked objects
+        self.inside_ids = self.inside_ids.clear()                           # set to store tracking ids of entered tracked objects
         self.vid_path = None                                                # video path
         print("Handler destructor invoked!")
 
