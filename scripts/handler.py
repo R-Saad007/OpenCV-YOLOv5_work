@@ -46,6 +46,15 @@ class handler():
         prev_time = 0.0
         new_frame_time = 0.0
         font = cv2.FONT_HERSHEY_SIMPLEX
+        '''
+        Regions for multiple videos
+        '''
+        # coordinates for the exit region
+        # start_exit = (480,380)
+        # end_exit = (1300,420)
+        # coordinates for the entrance region
+        # start_entrance = (480,550)
+        # end_entrance = (1300,600)
         # coordinates for the exit region
         start_exit = (620,400)
         end_exit = (1000,550)
