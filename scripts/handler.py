@@ -9,10 +9,11 @@ from yolox.tracker.byte_tracker import BYTETracker
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # For RTSP
-USERNAME = 'USERNAME'
-PASSWORD = 'PASSWORD'
-ENDPOINT = 'ENDPOINT'
-IP = 'IPADDRESS'
+# rtsp://admin:hik12345@192.168.10.240:554
+USERNAME = 'admin'
+PASSWORD = 'hik12345'
+IP = '192.168.10.240'
+ENDPOINT = '554'
 
 # ByteTrack args class
 class bytetrackerargs():
@@ -52,7 +53,7 @@ class handler():
         start_entrance = (620,650)
         end_entrance = (1000,800)
         # video capture object
-        # rtsp_cap = cv2.VideoCapture(f'rtsp://{username}:{password}@{ip}/{endpoint}')
+        #rtsp_cap = cv2.VideoCapture(f'rtsp://{USERNAME}:{PASSWORD}@{IP}/{ENDPOINT}')
         cap = cv2.VideoCapture(self.vid_path)
         # byte tracker object
         tracker = BYTETracker(bytetrackerargs)
