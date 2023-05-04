@@ -11,7 +11,5 @@ Script for data preprocessing (data extraction, shifting etc.)
 Script to draw bounding box on images
 ### handler.py
 Script for footfall counter
-### handler2.py
-Script for footfall counter without OOP implementation
 ### yolov8_coordinate_parser.py
 Script for extracing the bounding box coordinates of a yolov8n model detections
