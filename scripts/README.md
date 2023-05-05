@@ -9,7 +9,5 @@ Script for loading a custom dataset in the form of tensors
 Script for data preprocessing (data extraction, shifting etc.)
 ### draw_Bbox.py
 Script to draw bounding box on images
-### handler.py
-Script for footfall counter
 ### yolov8_coordinate_parser.py
 Script for extracing the bounding box coordinates of a yolov8n model detections
